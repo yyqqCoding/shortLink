@@ -23,11 +23,30 @@ spring:
       password: 123456
       port: 6379
       host: 127.0.0.1
+      database: 1          # 使用独立库，避免与其他服务/测试冲突
+      timeout: 3000
+      lettuce:
+        pool:
+          max-active: 32
+          max-idle: 16
+          min-idle: 4
+          max-wait: 5000     
+  redis:
+    redisson:
+      config: |
+        singleServerConfig:
+          address: "redis://127.0.0.1:6379"
+          password: "123456"
+          database: 1
+          connectionMinimumIdleSize: 8
+          connectionPoolSize: 64
+        threads: 0
+        nettyThreads: 0
 
-#short-link:
-#  group:
-#    max-num: 20
-#  flow-limit:
-#    enable: true
-#    time-window: 1
-#    max-access-count: 20
+short-link:
+ group:
+   max-num: 20
+ flow-limit:
+   enable: true
+   time-window: 1
+   max-access-count: 20

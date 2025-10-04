@@ -1,14 +1,13 @@
 package com.coding.shortlink.admin.dto.resp;
 
-import com.coding.shortlink.admin.common.serialize.PhoneDesensitizationSerializer;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 
 /**
- * 查询用户信息返回参数响应实体
+ * 用户返回参数响应实体
  */
 @Data
-public class UserRespDTO {
+public class UserActualRespDTO {
+
     /**
      * id
      */
@@ -27,7 +26,6 @@ public class UserRespDTO {
     /**
      * 手机号
      */
-    @JsonSerialize(using = PhoneDesensitizationSerializer.class)
     private String phone;
 
     /**
