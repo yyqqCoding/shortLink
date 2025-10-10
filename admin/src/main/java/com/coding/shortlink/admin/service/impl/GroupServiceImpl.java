@@ -1,12 +1,16 @@
 package com.coding.shortlink.admin.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.coding.shortlink.admin.dao.entity.GroupDO;
 import com.coding.shortlink.admin.dao.entity.GroupUniqueDO;
 import com.coding.shortlink.admin.dao.mapper.GroupMapper;
 import com.coding.shortlink.admin.dao.mapper.GroupUniqueMapper;
+import com.coding.shortlink.admin.dto.req.ShortLinkGroupSortReqDTO;
+import com.coding.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
+import com.coding.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
 import com.coding.shortlink.admin.service.GroupService;
 
 import cn.hutool.core.collection.CollectionUtil;
@@ -24,8 +28,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import static com.coding.shortlink.admin.common.constant.RedisCacheConstant.LOCK_GROUP_CREATE_KEY;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.redisson.api.RBloomFilter;
 import com.coding.shortlink.admin.toolkit.RandomGenerator;
+import org.springframework.beans.BeanUtils;
+
+import cn.hutool.core.bean.BeanUtil;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -40,7 +50,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
 
     @Override
     public void saveGroup(String groupName) {
-        saveGroup(UserContext.getUsername(), groupName);
+        //TODO: 后续加入网关层实现
+        // saveGroup(UserContext.getUsername(), groupName);
+        saveGroup("adc12138", groupName);
     }
 
     public void saveGroup(String username, String groupName) {
@@ -133,4 +145,77 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
         return gid;
     }
 
+    /**
+     * 查询短链接分组集合
+     * @return
+     */
+    @Override
+    public List<ShortLinkGroupRespDTO> listGroup() {
+
+        // saveGroup(UserContext.getUsername(), groupName);
+        LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
+                .eq(GroupDO::getDelFlag, 0)
+                //TODO: 后续加入网关层实现
+                .eq(GroupDO::getUsername, "adc12138" )
+                .orderByDesc(GroupDO::getSortOrder, GroupDO::getUpdateTime);
+        List<GroupDO> groupDOList = baseMapper.selectList(queryWrapper);
+        return groupDOList.stream().map(groupDO -> {
+            ShortLinkGroupRespDTO shortLinkGroupRespDTO = new ShortLinkGroupRespDTO();
+            BeanUtils.copyProperties(groupDO, shortLinkGroupRespDTO);
+            return shortLinkGroupRespDTO;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 修改短链接分组名称
+     * @param shortLinkGroupUpdateReqDTO
+     */
+    @Override
+    public void updateGroup(ShortLinkGroupUpdateReqDTO shortLinkGroupUpdateReqDTO) {
+
+        LambdaQueryWrapper<GroupDO> updateWrapper = Wrappers.lambdaQuery(GroupDO.class)
+                .eq(GroupDO::getGid, shortLinkGroupUpdateReqDTO.getGid())
+                //TODO: 后续加入网关层实现
+                .eq(GroupDO::getUsername, "adc12138")
+                .eq(GroupDO::getDelFlag, 0);
+        baseMapper.update(BeanUtil.toBean(shortLinkGroupUpdateReqDTO, GroupDO.class), updateWrapper);
+    }
+
+    /**
+     * 删除短链接分组
+     * @param gid
+     */
+    @Override
+    public void deleteGroup(String gid) {
+        LambdaQueryWrapper<GroupDO> deleteWrapper = Wrappers.lambdaQuery(GroupDO.class)
+                .eq(GroupDO::getGid, gid)
+                .eq(GroupDO::getUsername, "adc12138")
+                .eq(GroupDO::getDelFlag, 0);
+        GroupDO groupDO = new GroupDO();
+        groupDO.setDelFlag(1);
+        baseMapper.update(groupDO, deleteWrapper);
+    }
+    
+
+    /**
+     * 排序短链接分组
+     * @param requestParam
+     */
+    @Override
+    public void sortGroup(List<ShortLinkGroupSortReqDTO> requestParam) {
+        requestParam.forEach(each -> {
+            GroupDO groupDO = GroupDO.builder()
+                    .sortOrder(each.getSortOrder())
+                    .build();
+            LambdaUpdateWrapper<GroupDO> updateWrapper = Wrappers.lambdaUpdate(GroupDO.class)
+                    .eq(GroupDO::getUsername, "adc12138")
+                    //TODO: 后续加入网关层实现
+                    .eq(GroupDO::getGid, each.getGid())
+                    .eq(GroupDO::getDelFlag, 0);
+            baseMapper.update(groupDO, updateWrapper);
+        });
+    }
+
+
+     
 }
